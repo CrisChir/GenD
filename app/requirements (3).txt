@@ -1,0 +1,21 @@
+# Core
+torch>=2.1
+torchvision
+numpy
+opencv-python-headless
+matplotlib
+gradio>=4.0
+safetensors
+huggingface_hub>=0.21
+
+# NSG-VD
+omegaconf
+einops
+
+# GenD (loaded as a local repo, no extra pip install needed)
+# NSG-VD uses its own requirements.txt – the items below are the
+# critical subset that need to be present globally:
+scikit-learn
+scipy
+pandas
+tqdm

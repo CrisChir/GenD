@@ -1,0 +1,47 @@
+# ============================================================
+# GenD Gradio app – docker compose
+# Usage (from the REPO ROOT):
+#   docker compose -f docker/docker-compose.yml up --build
+# Stop:
+#   docker compose -f docker/docker-compose.yml down
+# ============================================================
+
+services:
+  gend-app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: gend-app:latest
+    container_name: gend-app
+    ports:
+      - "7860:7860"
+    environment:
+      # Hugging Face token – REQUIRED for the gated
+      # 'yermandy/GenD_DINOv3_L' model. Leave empty for CLIP / PE-L.
+      HF_TOKEN: ${HF_TOKEN:-}
+      PORT: "7860"
+      GRADIO_SERVER_NAME: "0.0.0.0"
+      # Gradio sharing / analytics
+      GRADIO_ANALYTICS_ENABLED: "False"
+    volumes:
+      # Persist HuggingFace model downloads between runs
+      - hf-cache:/cache/huggingface
+      - torch-cache:/cache/torch
+      # Optional: mount local checkpoints to use "Local checkpoint"
+      # instead of "Hugging Face" as model source:
+      # - ./runs:/app/runs
+    restart: unless-stopped
+    # On a Linux machine with NVIDIA GPUs (e.g. Tesla P40),
+    # uncomment the block below AND use the CUDA base image
+    # (see docker/README.md – section "GPU").
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+volumes:
+  hf-cache:
+  torch-cache:

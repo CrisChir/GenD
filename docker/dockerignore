@@ -1,0 +1,30 @@
+# Copy this file to the repository ROOT as ".dockerignore"
+#   cp docker/dockerignore .dockerignore
+# It keeps the Docker build context small and deterministic.
+
+.git
+.github
+__pycache__
+*.pyc
+*.pyo
+.ipynb_checkpoints
+runs/
+wandb/
+outputs/
+media/
+datasets/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+*.ckpt
+*.pth
+*.onnx
+weights/
+reference_bank/
+hf_models/
+.dockerignore
+Dockerfile*
+docker-compose*
+README.md

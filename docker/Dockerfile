@@ -64,5 +64,7 @@ RUN mkdir -p /app/weights/models/buffalo_l \
 # Pre-create writable dirs used by the app
 RUN mkdir -p /cache/huggingface /cache/torch /tmp/gradio outputs
 
-# Default: run the Gradio app
-CMD ["python", "app/run.py"]
+# Default: run the REST API + Gradio UI (single service, single port).
+# The API is served at /api/v1/*, the Gradio UI at /ui.
+# To run the UI-only app instead: docker run ... gend-app python app/run.py
+CMD ["python", "app/api.py"]

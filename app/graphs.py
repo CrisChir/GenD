@@ -44,7 +44,7 @@ class OrganicGraph:
     def _n(self, x, sc=4, am=0.02, sd=0):
         return _perlin(x * sc, seed=sd) * am
 
-    def render(self) -> plt.Figure:
+    def render(self, legend: bool = True) -> plt.Figure:
         fig, ax = plt.subplots(figsize=(7, 7), subplot_kw={"projection": "polar"})
         fig.patch.set_facecolor("#f4f1ea")
         ax.set_facecolor("#f4f1ea")
@@ -83,6 +83,21 @@ class OrganicGraph:
         ax.text(0, 0, f"FAKE\n{self.fake * 100:.1f}%", ha="center", va="center",
                 fontsize=14, fontweight="bold", color="#1a1a1a", transform=ax.transData)
         ax.set_ylim(0, 1.7)
+        if legend:
+            from matplotlib.patches import Patch
+
+            handles = [
+                Patch(facecolor="#1a1a1a", alpha=0.45, label="P(fake) - outer ring"),
+                Patch(facecolor="#1f77b4", alpha=0.45, label="Authenticity - inner ring"),
+            ]
+            ax.legend(
+                handles=handles,
+                loc="lower center",
+                bbox_to_anchor=(0.5, -0.06),
+                frameon=False,
+                fontsize=9,
+                labelcolor="#1a1a1a",
+            )
         fig.tight_layout()
         return fig
 
@@ -91,7 +106,13 @@ class RadarGraph:
     """Dark 12-sector radar polygon with 24 interpolated score points."""
 
     @staticmethod
-    def create(scores: List[float], title: str, filename: str, color: str = "#00ffcc") -> str:
+    def create(
+        scores: List[float],
+        title: str,
+        filename: str,
+        color: str = "#00ffcc",
+        legend: bool = True,
+    ) -> str:
         s = np.asarray(scores, dtype=float)
         if s.size == 0:
             s = np.array([0.5])
@@ -119,6 +140,23 @@ class RadarGraph:
         ax.set_xticklabels([])
         fake = float(np.mean(s))
         ax.set_title(f"{title} - FAKE {fake * 100:.1f}%", color="white", size=12, pad=20)
+        if legend:
+            from matplotlib.lines import Line2D
+
+            handles = [
+                Line2D([0], [0], color=color, lw=2, marker="o", markersize=4, alpha=0.8,
+                       label="P(fake) per sample (24 sectors)"),
+                Line2D([0], [0], color="white", alpha=0.25, lw=0.8, label="Sector boundaries"),
+            ]
+            ax.legend(
+                handles=handles,
+                loc="lower center",
+                bbox_to_anchor=(0.5, -0.14),
+                frameon=False,
+                fontsize=8,
+                labelcolor="white",
+                facecolor="#0b0b0b",
+            )
         path = str(filename)
         plt.savefig(path, dpi=110, facecolor="#0b0b0b")
         plt.close()
@@ -131,6 +169,7 @@ def render_score_graph(
     out_dir,
     name: str,
     title: str = "GenD",
+    legend: bool = True,
 ) -> Optional[str]:
     """Render the score graph in the requested style; returns the image path."""
     if not scores or style not in ("Organic", "Radar 12 sectors"):
@@ -140,11 +179,11 @@ def render_score_graph(
     fake = float(np.clip(np.mean(scores), 0, 1))
 
     if style == "Organic":
-        fig = OrganicGraph(fake, list(scores)).render()
+        fig = OrganicGraph(fake, list(scores)).render(legend=legend)
         path = out_dir / f"{name}_organic.png"
         fig.savefig(path, dpi=120, bbox_inches="tight")
         plt.close(fig)
         return str(path)
 
     path = out_dir / f"{name}_radar.png"
-    return RadarGraph.create(list(scores), title, path)
+    return RadarGraph.create(list(scores), title, path, legend=legend)

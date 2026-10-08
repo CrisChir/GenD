@@ -31,3 +31,7 @@ onnxruntime-gpu==1.21.0 # for ONNX model inference
 
 # --- for app/run.py ---
 gradio==5.49.1
+# --- for app/api.py (REST API; versions already constrained by gradio) ---
+fastapi # API framework (pulled in by gradio)
+uvicorn # ASGI server (pulled in by gradio)
+python-multipart # multipart/form-data uploads (pulled in by gradio)

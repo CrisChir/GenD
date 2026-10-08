@@ -118,3 +118,105 @@ docker compose -f docker/docker-compose.yml down          # oprește containerul
 docker compose -f docker/docker-compose.yml down -v        # oprește + șterge volumele (modelele descărcate)
 docker image rm gend-app                                    # șterge imaginea
 ```
+
+## 10. API REST (integrare în aplicații mai mari)
+
+Începând cu această versiune, containerul rulează implicit `app/api.py`, un serviciu FastAPI
+care expune **în același proces și același port (7860)** atât API-ul REST, cât și interfața
+Gradio (montată la `/ui`).
+
+| Endpoint | Metodă | Descriere |
+|---|---|---|
+| `/api/v1/health` | GET | starea serviciului, dispozitivul (CPU/CUDA), modelele încărcate |
+| `/api/v1/models` | GET | lista modelelor Hugging Face, checkpoint-ul local implicit, stilurile de grafic |
+| `/api/v1/analyze` | POST | analizează o imagine sau un videoclip încărcat; returnează scorurile, verdictul și graficul |
+| `/api/v1/files/...` | GET | fișiere generate (grafice, media adnotată) |
+| `/ui` | GET | interfața Gradio completă |
+| `/docs` | GET | documentația OpenAPI interactivă (Swagger UI) |
+
+### Exemplu de apel (imagine)
+
+```bash
+curl -X POST http://localhost:7860/api/v1/analyze \
+  -F "file=@poza.jpg" \
+  -F "graph_style=Organic" \
+  -F "legend=true"
+```
+
+### Exemplu de apel (videoclip, cu subeșantionare)
+
+```bash
+curl -X POST http://localhost:7860/api/v1/analyze \
+  -F "file=@clip.mp4" \
+  -F "hf_model=yermandy/GenD_CLIP_L_14" \
+  -F "stride=5" \
+  -F "max_frames=50" \
+  -F "graph_style=Radar 12 sectors" \
+  -F "legend=true"
+```
+
+### Răspuns (JSON)
+
+```json
+{
+  "job_id": "a1b2c3d4e5f6",
+  "filename": "poza.jpg",
+  "media_type": "image",
+  "num_frames": 1,
+  "num_faces": 2,
+  "avg_p_fake": 0.8713,
+  "median_p_fake": 0.8690,
+  "p_fake_scores": [0.871, 0.872],
+  "verdict": {"label": "FAKE", "p_fake": 0.8713, "threshold": 0.5},
+  "graph": {
+    "style": "Organic",
+    "legend": true,
+    "filename": "input_score_organic.png",
+    "url": "/api/v1/files/api/a1b2c3d4e5f6/input_score_organic.png",
+    "base64_png": "data:image/png;base64,..."
+  },
+  "annotated_media": {"filename": "input_annot.png", "url": "/api/v1/files/api/a1b2c3d4e5f6/input_annot.png"},
+  "processing_seconds": 12.4
+}
+```
+
+Câmpul `graph.base64_png` conține imaginea graficului (cu legendă) încorporată direct în
+răspuns, astfel încât aplicația consumatoare nu mai trebuie să facă un al doilea request.
+Alternativ, `graph.url` poate fi descărcat separat.
+
+### Parametri request (`/api/v1/analyze`, toți opționali în afară de `file`)
+
+| Parametru | Implicit | Descriere |
+|---|---|---|
+| `model_source` | `Hugging Face` | `Hugging Face` sau `Local Checkpoint` |
+| `hf_model` | `yermandy/GenD_DINOv3_L` | identificatorul modelului HF |
+| `local_ckpt` | vezi `DEFAULT_CKPT` | calea către checkpoint local |
+| `face_thresh` | `0.5` | pragul detectorului de fețe |
+| `scale` | `1.3` | scalarea alinierii feței |
+| `target_size` | `-1` | dimensiunea feței în px (`-1` = original) |
+| `max_faces` | `-1` | numărul maxim de fețe pe cadru (`-1` = toate) |
+| `stride` | `1` | procesează 1 din N cadre (doar video) |
+| `max_frames` | `-1` | limita de cadre procesate (`-1` = fără limită) |
+| `graph_style` | `Organic` | `Organic`, `Radar 12 sectors` sau `None` |
+| `legend` | `true` | afișează legenda pe grafic |
+| `verdict_threshold` | `0.5` | pragul peste care verdictul este `FAKE` |
+| `include_base64` | `false` | include și media adnotată ca base64 (doar imagini) |
+
+### CORS
+
+Pentru apeluri din browser din alte origini, setați variabila de mediu:
+
+```yaml
+environment:
+  API_CORS_ORIGINS: "https://app-exemplu.ro"
+```
+
+Valoarea implicită este `*` (permisivă). Inferența este serializată intern (un singur
+request de analiză rulează la un moment dat); pentru volume mari, scalați pe orizontală
+cu mai multe replici ale containerului.
+
+### Revenire la modul doar UI
+
+```bash
+docker run --rm -p 7860:7860 gend-app python app/run.py
+```

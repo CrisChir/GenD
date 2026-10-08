@@ -23,6 +23,10 @@ services:
       GRADIO_SERVER_NAME: "0.0.0.0"
       # Gradio sharing / analytics
       GRADIO_ANALYTICS_ENABLED: "False"
+      # REST API (served by app/api.py on the same port 7860):
+      #   /api/v1/analyze, /api/v1/health, /api/v1/models, /docs
+      # CORS origins allowed to call the API (default: * -> all origins)
+      API_CORS_ORIGINS: ${API_CORS_ORIGINS:-*}
     volumes:
       # Persist HuggingFace model downloads between runs
       - hf-cache:/cache/huggingface

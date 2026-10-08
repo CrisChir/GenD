@@ -80,8 +80,7 @@ class DeepfakeDetector:
         return torch.float32
 
     def load_model(self, model_source: str, model_id: str) -> Tuple[Union[GenD_Train, GenD_HF], Callable, torch.dtype]:
-        
-"""Load and cache the GenD model."""
+        """Load and cache the GenD model."""
         cache_key = f"{model_source}::{model_id}::{DEVICE}"
         if cache_key in self.model_cache:
             return (
@@ -133,8 +132,7 @@ class DeepfakeDetector:
 
     def infer_faces(
         self,
-        frame_b
-gr: np.ndarray,
+        frame_bgr: np.ndarray,
         detector: RetinaFace,
         model: Union[GenD_Train, GenD_HF],
         preproc: Callable,
@@ -190,8 +188,7 @@ gr: np.ndarray,
 
                 p_fake = float(probs[1])
 
-            r
-esults.append((xyxy[i], p_fake))
+            results.append((xyxy[i], p_fake))
 
         return results
 
@@ -244,8 +241,7 @@ class MediaProcessor:
         """Process a single image."""
         try:
             img_rgb = iio.imread(img_path)
-            img = cv2.cvtColor(img_rgb, cv2.COLO
-R_RGB2BGR)
+            img = cv2.cvtColor(img_rgb, cv2.COLOR_RGB2BGR)
         except Exception as e:
             raise RuntimeError(f"Failed to read image: {img_path} ({e})")
 
@@ -304,8 +300,7 @@ R_RGB2BGR)
 
         try:
             for frame_rgb in iio.imiter(vid_path, plugin="pyav"):
-                if frame_idx % stride !=
- 0:
+                if frame_idx % stride != 0:
                     frame_idx += 1
                     continue
 
@@ -355,8 +350,7 @@ R_RGB2BGR)
             "num_frames": float(processed),
             "num_faces": float(total_faces),
             "avg_p_fake": avg_fake,
-            "median_p_fake": med_fak
-e,
+            "median_p_fake": med_fake,
         }
         return str(out_path), metrics, p_fake_values
 
@@ -443,8 +437,7 @@ def run_inference(
 
     print("Loading face detector...")
     yield (
-        pd.DataFrame(columns=["input", "num_frames", "num_faces", "avg_p_fake"
-, "median_p_fake"]),
+        pd.DataFrame(columns=["input", "num_frames", "num_faces", "avg_p_fake", "median_p_fake"]),
         "### ⏳ Status: Loading face detector...",
         None,
         None,
@@ -507,8 +500,7 @@ def run_inference(
         fraction = current_progress / total_progress_units if total_progress_units else 1.0
         progress(
             fraction,
-            desc=f"Processing frame
-s ({current_progress}/{total_progress_units})",
+            desc=f"Processing frames ({current_progress}/{total_progress_units})",
         )
 
     progress(0.0, desc=f"Processing frames (0/{total_progress_units})")
@@ -593,8 +585,7 @@ s ({current_progress}/{total_progress_units})",
                     scale,
                     target_size,
                     outputs_dir,
-                    max_faces i
-f max_faces > 0 else None,
+                    max_faces if max_faces > 0 else None,
                     advance_progress,
                 )
             else:
@@ -662,8 +653,7 @@ f max_faces > 0 else None,
 
 
 def get_thumbnail(path: str) -> Optional[str]:
-    """
-Get thumbnail image path for preview (image itself or first frame of video)."""
+    """Get thumbnail image path for preview (image itself or first frame of video)."""
     if is_image(path):
         return path
     if is_video(path):
@@ -709,8 +699,7 @@ def build_ui():
 
             with gr.Row():
                 stride = gr.Slider(1, 10, value=1, step=1, label="Frame stride (video)")
-                max_frames = gr.Number(value=-1, p
-recision=0, label="Max frames per video (-1=all)")
+                max_frames = gr.Number(value=-1, precision=0, label="Max frames per video (-1=all)")
                 max_faces = gr.Slider(1, 10, value=1, step=1, label="Max faces per frame")
 
             with gr.Row():
@@ -781,8 +770,7 @@ recision=0, label="Max frames per video (-1=all)")
                 data.forEach(row => {
                     text += row.join(",") + "\\n";
                 });
-                navigator.clipboard.writeText(t
-ext);
+                navigator.clipboard.writeText(text);
             }""",
         )
 
@@ -848,7 +836,6 @@ ext);
 
         files.change(
             fn=update_previews,
-
             inputs=[
                 files,
                 # folder,
